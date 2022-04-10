@@ -1,0 +1,68 @@
+service: api-gw-sqs
+plugins:
+  - serverless-associate-waf
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+custom:
+  associateWaf:
+    name: CF-AWS-WAF
+    version: V2 #plugin moze byc regional (stara wersja waf) lub v2 (nowa waf)
+functions:
+  hello:
+    handler:  handler.hello
+    memorySize: 128
+    events:
+      - http: 
+          path: hello
+          method: post
+  bye:
+    handler:  handler.bye
+    memorySize: 128
+    events:
+      - http: 
+          path: bye
+          method: get
+resources:
+  Resources:
+    MyWafConfig:
+      Type: AWS::WAFv2::WebACL
+      Properties:
+        Name: CF-AWS-WAF
+        VisibilityConfig: #ustawienia do metryk
+          SampledRequestsEnabled: true #czy ma przechowywac requesty w logach WAF'a
+          CloudWatchMetricsEnabled: true
+          MetricName: test-waf-2 #nazwa metryki w CW
+        Scope: REGIONAL #regional albo globacl, regional dla api global dla cdn
+        CustomResponseBodies:
+          error-xss: #definiujemy nasz custom response
+            ContentType: APPLICATION_JSON #typy, jest jeszcze html i plaintext
+            Content: |-
+              {
+              "error": "DUPA ZIMNA NOWY WAF"
+              }
+        DefaultAction: #jaka akcja czy deny czy allow, { } to syntax, do srodka nic sie nie wpisuje
+          Allow: { }
+        Rules: #rules to core ustawien, miesko
+          - Name: XSS-protection
+            Priority: 0 #kilka rule ich priorytet, lower first
+            Statement: # statementy opisujace
+              XssMatchStatement: #rule dla XSS
+                FieldToMatch: #co sprawdzamy moze byc headrsy, url, body itp
+                  JsonBody:
+                    MatchPattern:
+                      All: { }
+                    MatchScope: VALUE
+                TextTransformations: #transformacje to akcje przed validacja, mozna np usunac trailing whitespaces itp
+                  - Priority: 0
+                    Type: NONE
+            Action: #co ma sie stac jak bedzie match
+              Block:
+                CustomResponse:
+                  ResponseCode: 418
+                  CustomResponseBodyKey: error-xss
+            VisibilityConfig: #ustawienia do metryk
+              SampledRequestsEnabled: true #czy ma przechowywac requesty w logach WAF'a
+              CloudWatchMetricsEnabled: true
+              MetricName: XSS-protection #nazwa metryki w CW
