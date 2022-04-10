@@ -1,0 +1,43 @@
+Name: test
+Id: 5417db25-58e3-430f-afc9-7a32ad9aed04
+ARN: arn:aws:wafv2:us-east-1:962178990563:regional/webacl/test/5417db25-58e3-430f-afc9-7a32ad9aed04
+DefaultAction:
+  Allow: {}
+Description: ''
+Rules:
+  - Name: XSS-protection
+    Priority: 0
+    Statement:
+      XssMatchStatement:
+        FieldToMatch:
+          JsonBody:
+            MatchPattern:
+              All: {}
+            MatchScope: VALUE
+            InvalidFallbackBehavior: MATCH
+        TextTransformations:
+          - Priority: 0
+            Type: NONE
+    Action:
+      Block:
+        CustomResponse:
+          ResponseCode: 418
+          CustomResponseBodyKey: error-xss
+    VisibilityConfig:
+      SampledRequestsEnabled: true
+      CloudWatchMetricsEnabled: true
+      MetricName: XSS-protection
+VisibilityConfig:
+  SampledRequestsEnabled: true
+  CloudWatchMetricsEnabled: true
+  MetricName: test-waf
+Capacity: 80
+ManagedByFirewallManager: false
+LabelNamespace: 'awswaf:962178990563:webacl:test:'
+CustomResponseBodies:
+  error-xss:
+    ContentType: APPLICATION_JSON
+    Content: |-
+      {
+      "error": "DUPA ZIMNA"
+      }
