@@ -54,6 +54,7 @@ resources:
                     MatchPattern:
                       All: { }
                     MatchScope: VALUE
+                    InvalidFallbackBehavior: EVALUATE_AS_STRING
                 TextTransformations: #transformacje to akcje przed validacja, mozna np usunac trailing whitespaces itp
                   - Priority: 0
                     Type: NONE
